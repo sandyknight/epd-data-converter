@@ -6,20 +6,19 @@ use polars::prelude::*;
 use std::fs;
 use std::time::{Instant, Duration};
 
-/// Extracts the single file from `zip_path` into the `destination_folder`,
-/// preserving the original file name from inside the zip.
-/// Returns the path to the extracted file.
+/// Extracts the csv file from `zip_path`
+/// Returns the path to the extracted file for use by convert
 ///
 /// # Arguments
-/// * `zip_path` - The path to the ZIP file to extract.
-/// * `destination_folder` - The folder where the file should be placed.
+/// * `zip_path` - path to the .zip
+/// * `destination_folder` - where to put the .csv
 pub fn extract_data<P: AsRef<Path>, Q: AsRef<Path>>(
     zip_path: P,
     destination_folder: Q
 ) -> io::Result<PathBuf> {
     println!("Extracting: {}", zip_path.as_ref().display());
 
-    // 1. Open the ZIP file
+    //  open the .zip file
     let zip_file = match File::open(&zip_path) {
         Ok(file) => file,
         Err(e) => {
@@ -28,7 +27,7 @@ pub fn extract_data<P: AsRef<Path>, Q: AsRef<Path>>(
         }
     };
 
-    // 2. Create a ZipArchive object
+    //  Make a `ZipArchive` object
     let mut archive = match ZipArchive::new(zip_file) {
         Ok(archive) => archive,
         Err(e) => {
@@ -40,12 +39,12 @@ pub fn extract_data<P: AsRef<Path>, Q: AsRef<Path>>(
 
     // Check if the archive is empty
     if archive.len() == 0 {
-        let error = io::Error::new(io::ErrorKind::Other, "Zip archive is empty");
+        let error = io::Error::new(io::ErrorKind::Other, "zip is empty");
         println!("{}", error);
         return Err(error);
     }
 
-    // 3. Access the first file inside
+    //  Open the .csv file
     let mut file_in_zip = match archive.by_index(0) {
         Ok(file) => file,
         Err(e) => {
@@ -55,13 +54,12 @@ pub fn extract_data<P: AsRef<Path>, Q: AsRef<Path>>(
         }
     };
 
-    // 4. Extract the original name from the ZIP entry
+    // Get the name of the file - #FIXME this doesn't seem to work, it's just getting the zip name
     let file_name_in_zip = file_in_zip.name().to_string();
 
-    // 5. Construct your desired output path
+    // Concat the file path
     let out_path = destination_folder.as_ref().join(&file_name_in_zip);
 
-    // Ensure the parent folder(s) exist
     if let Some(parent_dir) = out_path.parent() {
         if let Err(e) = std::fs::create_dir_all(parent_dir) {
             println!("Error creating directory {}: {}", parent_dir.display(), e);
@@ -69,7 +67,7 @@ pub fn extract_data<P: AsRef<Path>, Q: AsRef<Path>>(
         }
     }
 
-    // 6. Create & write the extracted file
+    // write the new csv file
     let mut outfile = match File::create(&out_path) {
         Ok(file) => file,
         Err(e) => {
@@ -78,7 +76,7 @@ pub fn extract_data<P: AsRef<Path>, Q: AsRef<Path>>(
         }
     };
 
-    // Copy the contents
+    // copy the csv contents into the new file
     match io::copy(&mut file_in_zip, &mut outfile) {
         Ok(bytes) => println!("Extracted {} bytes to {}", bytes, out_path.display()),
         Err(e) => {
@@ -90,11 +88,11 @@ pub fn extract_data<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok(out_path)
 }
 
-/// Converts a CSV file to Parquet format using the EPD schema.
-///
+/// Convert the EPD .csv file to .parquet
+/// Tried to speed it up by telling polars the data types of all the columns
 /// # Arguments
-/// * `csv_path` - Path to the CSV file to convert
-/// * `parquet_path` - Destination path for the Parquet file
+/// * `csv_path` - location of the csv - this comes from the extract_data() function above
+/// * `parquet_path` - where to put the .parquet output
 pub fn convert_data<P: AsRef<Path>, Q: AsRef<Path>>(csv_path: P, parquet_path: Q) -> Result<(), PolarsError> {
     let mut epd_schema = Schema::with_capacity(26);
 

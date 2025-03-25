@@ -1,4 +1,4 @@
-I had a query I thought was too specific for the (very good) work on openprescribing.net and I found the actual EPD API too tricky to get very far with.
+I had a query I thought was too specific for the (very good) work on [openprescribing.net](openprescribing.net) and I found the actual EPD API too tricky to get very far with.
 
 So I scraped all of the EPD monthly datasets I could with the `curl` package in R. 
 
