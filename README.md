@@ -16,7 +16,7 @@ That's still 23GB of data, which probably won't load into the RAM on my hardware
 
 I suspect the fastest way to do this would have been to use `system2()` in R to unzip a file, `data.table::fread()` to load it, and `arrow::write_parquet()` to write it. Looping that and deleting the `.zip` and `.csv` files at the end of each iteration would have allowed the conversion without filling too much storage at once. [*Edit: I have since tested this and it actually seems to take about twice as long (about 80 seconds per file), although I didn't give `fread()` a list of the column data types*] 
 
-But, since I'm trying to learn a language other than R, and for some reason I can't get into Python, I wrote this script in Rust. It took me a few weeks in total, and I did take some help from LLMs in the end. It worked though, and converted all 88 zipped `.csv` files into `.parquet` in about an hour on a 4 core CPU from 2017. 
+But, since I'm trying to learn a language other than R, and for some reason I can't get into Python, I wrote this script in Rust. It took me a few weeks in total. It worked though, and converted all 88 zipped `.csv` files into `.parquet` in about an hour on a 4 core CPU from 2017. 
 
 And it turns out you don't have to join all the `.parquet` files together into one big file in order to query it, see the Arrow tutorial on working with multi-file datasets: https://arrow.apache.org/docs/r/articles/dataset.html
 
